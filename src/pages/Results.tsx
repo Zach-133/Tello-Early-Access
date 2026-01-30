@@ -2,10 +2,19 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, AlertCircle, RefreshCw, Brain, Lightbulb, MessageSquare, Target, Trophy } from "lucide-react";
+import { ArrowLeft, Loader2, AlertCircle, RefreshCw, Brain, Lightbulb, MessageSquare, Target, Trophy, TrendingUp, Award } from "lucide-react";
 import ScoreCard from "@/components/ScoreCard";
+import PerformanceOverview from "@/components/PerformanceOverview";
 
-// Helper to get score color class
+// Helper to get performance rating based on final score (out of 100)
+const getPerformanceRating = (score: number) => {
+  if (score >= 90) return { label: "Excellent", color: "text-emerald-600", bgColor: "bg-emerald-50", borderColor: "border-emerald-200" };
+  if (score >= 70) return { label: "Good", color: "text-blue-600", bgColor: "bg-blue-50", borderColor: "border-blue-200" };
+  if (score >= 50) return { label: "Fair", color: "text-amber-600", bgColor: "bg-amber-50", borderColor: "border-amber-200" };
+  return { label: "Needs Improvement", color: "text-red-600", bgColor: "bg-red-50", borderColor: "border-red-200" };
+};
+
+// Helper to get score color class for final score (out of 100)
 const getScoreColor = (score: number) => {
   if (score >= 90) return "text-emerald-600";
   if (score >= 75) return "text-blue-600";
@@ -89,145 +98,215 @@ const Results = () => {
     };
   }, [sessionId]);
 
-  return (
-    <div className="min-h-screen gradient-hero flex items-center justify-center p-4">
-      <Card className="max-w-2xl w-full bg-card rounded-2xl shadow-card border border-border/50 p-8">
-        <div className="space-y-6">
-          {/* Header */}
-          <div className="text-center space-y-2">
-            <h1 className="text-3xl lg:text-4xl font-bold text-foreground font-serif">
-              Interview Results
-            </h1>
-            <p className="text-sm text-muted-foreground font-mono">
-              Session ID: {sessionId}
-            </p>
-          </div>
+  const performanceRating = results ? getPerformanceRating(results.finalScore || 0) : null;
 
-          {/* STATUS: Initializing or Polling */}
-          {(status === 'initializing' || status === 'polling') && (
-            <div className="bg-primary/10 p-6 rounded-xl border border-primary/20">
-              <div className="flex items-center gap-4">
-                <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                <div>
-                  <p className="text-lg font-semibold text-foreground">
-                    Processing Your Interview...
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Poll #{pollCount + 1} of 60 - This usually takes 30-60 seconds
-                  </p>
+  return (
+    <div className="min-h-screen gradient-hero py-12 px-4">
+      <div className="max-w-6xl mx-auto space-y-8">
+        
+        {/* STATUS: Initializing or Polling */}
+        {(status === 'initializing' || status === 'polling') && (
+          <Card className="bg-card rounded-2xl shadow-card border border-border/50 p-12">
+            <div className="flex flex-col items-center gap-6">
+              <div className="relative">
+                <Loader2 className="w-20 h-20 text-primary animate-spin" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Award className="w-8 h-8 text-primary animate-pulse" />
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* STATUS: Completed */}
-          {status === 'completed' && results && (
-            <div className="space-y-8">
-              {/* Final Score Hero Section */}
-              <div className="text-center py-8 bg-gradient-to-br from-primary/5 via-accent/10 to-secondary rounded-2xl border border-border/30">
-                <div className="flex items-center justify-center gap-2 mb-4">
-                  <Trophy className="w-6 h-6 text-primary" />
-                  <h2 className="text-2xl font-semibold text-foreground font-serif">
-                    Great work, {results.candidateName || 'Candidate'}!
-                  </h2>
-                </div>
-
-                {/* Large Score Display */}
-                <div className="inline-flex items-center justify-center w-40 h-40 rounded-full bg-card shadow-card border-4 border-primary/20 mb-4">
-                  <div className="text-center">
-                    <p className={`text-5xl font-bold ${getScoreColor(results.finalScore || 0)}`}>
-                      {results.finalScore || 0}
-                    </p>
-                    <p className="text-sm text-muted-foreground">out of 100</p>
-                  </div>
-                </div>
-
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-foreground mb-2 font-serif">
+                  Processing Your Interview Results
+                </h2>
+                <p className="text-muted-foreground">
+                  Our AI graders are analyzing your responses...
+                </p>
                 <p className="text-sm text-muted-foreground mt-4">
-                  {results.jobField || 'General'} Interview • {results.difficulty || 'Standard'} Difficulty
+                  Poll #{pollCount + 1} of 60 • Usually takes 30-60 seconds
+                </p>
+                <p className="text-xs text-muted-foreground mt-2 font-mono">
+                  Session: {sessionId}
                 </p>
               </div>
+            </div>
+          </Card>
+        )}
 
-              {/* Criteria Breakdown Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ScoreCard
-                  icon={Brain}
-                  title="Technical Knowledge"
-                  score={results.scores?.technicalKnowledge?.score || 0}
-                  comment={results.scores?.technicalKnowledge?.comment || "No feedback available"}
-                  accentColor="purple"
-                />
-                <ScoreCard
-                  icon={Lightbulb}
-                  title="Problem Solving"
-                  score={results.scores?.problemSolving?.score || 0}
-                  comment={results.scores?.problemSolving?.comment || "No feedback available"}
-                  accentColor="amber"
-                />
-                <ScoreCard
-                  icon={MessageSquare}
-                  title="Communication Skills"
-                  score={results.scores?.communicationSkills?.score || 0}
-                  comment={results.scores?.communicationSkills?.comment || "No feedback available"}
-                  accentColor="blue"
-                />
-                <ScoreCard
-                  icon={Target}
-                  title="Relevance & Depth"
-                  score={results.scores?.relevance?.score || 0}
-                  comment={results.scores?.relevance?.comment || "No feedback available"}
-                  accentColor="emerald"
-                />
+        {/* STATUS: Error or Timeout */}
+        {(status === 'error' || status === 'timeout') && (
+          <Card className="bg-card rounded-2xl shadow-card border border-border/50 p-12">
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-destructive/10 rounded-full mb-4">
+                <AlertCircle className="w-8 h-8 text-destructive" />
               </div>
-
-              {/* Start New Interview Button */}
-              <div className="text-center pt-4">
+              <h2 className="text-2xl font-bold text-destructive mb-4 font-serif">
+                Unable to Load Results
+              </h2>
+              <p className="text-muted-foreground mb-6">{error}</p>
+              <div className="flex gap-4 justify-center">
                 <Button
-                  onClick={() => navigate('/')}
-                  size="lg"
-                  className="px-8 py-6 text-lg font-semibold shadow-warm hover:shadow-lg transition-all"
+                  variant="destructive"
+                  onClick={() => window.location.reload()}
+                  className="gap-2"
                 >
+                  <RefreshCw className="w-4 h-4" />
+                  Try Again
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => navigate('/')}
+                  className="gap-2"
+                >
+                  <ArrowLeft className="w-4 h-4" />
                   Start New Interview
                 </Button>
               </div>
             </div>
-          )}
+          </Card>
+        )}
 
-          {/* STATUS: Error or Timeout */}
-          {(status === 'error' || status === 'timeout') && (
-            <div className="bg-destructive/10 p-6 rounded-xl border border-destructive/20">
-              <div className="flex items-center gap-3 mb-3">
-                <AlertCircle className="w-6 h-6 text-destructive" />
-                <p className="text-lg font-semibold text-foreground">
-                  Error Loading Results
+        {/* STATUS: Completed */}
+        {status === 'completed' && results && performanceRating && (
+          <div className="space-y-8">
+            
+            {/* Header */}
+            <div className="text-center mb-8">
+              <h1 className="text-4xl font-bold text-foreground mb-2 font-serif">
+                Interview Complete! 🎉
+              </h1>
+              <p className="text-muted-foreground">
+                {results.jobField || 'General'} • {results.difficulty || 'Standard'} Difficulty
+              </p>
+              <p className="text-sm text-muted-foreground mt-1 font-mono">
+                Session: {sessionId}
+              </p>
+            </div>
+
+            {/* Final Score Hero Card */}
+            <Card className={`bg-card rounded-2xl shadow-card p-8 border-4 ${performanceRating.borderColor}`}>
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center mb-4">
+                  <TrendingUp className={`w-12 h-12 ${performanceRating.color}`} />
+                </div>
+
+                <h2 className="text-2xl font-semibold text-muted-foreground mb-2 font-serif">
+                  Overall Performance
+                </h2>
+
+                {/* Large Score Circle */}
+                <div className="inline-flex flex-col items-center justify-center w-48 h-48 rounded-full bg-gradient-to-br from-primary/5 via-accent/10 to-secondary shadow-card mb-6 relative">
+                  <div className="text-center z-10">
+                    <p className={`text-6xl font-bold ${getScoreColor(results.finalScore || 0)}`}>
+                      {results.finalScore || 0}
+                    </p>
+                    <p className="text-xl text-muted-foreground">out of 100</p>
+                  </div>
+
+                  {/* Decorative ring */}
+                  <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="45"
+                      fill="none"
+                      stroke="currentColor"
+                      className="text-border"
+                      strokeWidth="4"
+                    />
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="45"
+                      fill="none"
+                      stroke="currentColor"
+                      className="text-primary"
+                      strokeWidth="4"
+                      strokeDasharray={`${((results.finalScore || 0) / 100) * 283} 283`}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </div>
+
+                {/* Performance Badge */}
+                <div className={`inline-block px-6 py-3 rounded-full ${performanceRating.bgColor} border-2 ${performanceRating.borderColor}`}>
+                  <span className={`text-xl font-bold ${performanceRating.color}`}>
+                    {performanceRating.label}
+                  </span>
+                </div>
+
+                <p className="text-muted-foreground mt-4 max-w-2xl mx-auto">
+                  {(results.finalScore || 0) >= 90 && "Outstanding performance! You demonstrated exceptional skills across all criteria."}
+                  {(results.finalScore || 0) >= 70 && (results.finalScore || 0) < 90 && "Great job! You showed strong competency in most areas with room for minor improvements."}
+                  {(results.finalScore || 0) >= 50 && (results.finalScore || 0) < 70 && "Good effort! You have a solid foundation with several areas for growth."}
+                  {(results.finalScore || 0) < 50 && "Keep practicing! Focus on the feedback below to improve your interview skills."}
                 </p>
               </div>
-              <p className="text-sm text-muted-foreground mb-4">
-                {error}
+            </Card>
+
+            {/* Criteria Breakdown Header */}
+            <div className="text-center pt-8">
+              <h2 className="text-3xl font-bold text-foreground mb-2 font-serif">
+                Detailed Breakdown
+              </h2>
+              <p className="text-muted-foreground">
+                Performance across key evaluation criteria
               </p>
+            </div>
+
+            {/* Criteria Breakdown Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ScoreCard
+                icon={Brain}
+                title="Technical Knowledge"
+                subtitle="Understanding of concepts"
+                score={results.scores?.technicalKnowledge?.score || 0}
+                comment={results.scores?.technicalKnowledge?.comment || "No feedback available"}
+                accentColor="purple"
+              />
+              <ScoreCard
+                icon={Lightbulb}
+                title="Problem Solving"
+                subtitle="Analytical thinking"
+                score={results.scores?.problemSolving?.score || 0}
+                comment={results.scores?.problemSolving?.comment || "No feedback available"}
+                accentColor="amber"
+              />
+              <ScoreCard
+                icon={MessageSquare}
+                title="Communication Skills"
+                subtitle="Clarity & articulation"
+                score={results.scores?.communicationSkills?.score || 0}
+                comment={results.scores?.communicationSkills?.comment || "No feedback available"}
+                accentColor="blue"
+              />
+              <ScoreCard
+                icon={Target}
+                title="Relevance & Depth"
+                subtitle="Focus & detail"
+                score={results.scores?.relevance?.score || 0}
+                comment={results.scores?.relevance?.comment || "No feedback available"}
+                accentColor="emerald"
+              />
+            </div>
+
+            {/* Comparative Performance Overview */}
+            {results.scores && (
+              <PerformanceOverview scores={results.scores} />
+            )}
+
+            {/* Start New Interview Button */}
+            <div className="text-center pt-8">
               <Button
-                variant="destructive"
-                onClick={() => window.location.reload()}
-                className="gap-2"
+                onClick={() => navigate('/')}
+                size="lg"
+                className="px-8 py-6 text-lg font-semibold shadow-warm hover:shadow-lg transition-all"
               >
-                <RefreshCw className="w-4 h-4" />
-                Try Again
+                Start New Interview
               </Button>
             </div>
-          )}
-
-          {/* Back Button */}
-          <div className="flex justify-center">
-            <Button
-              variant="outline"
-              onClick={() => navigate('/')}
-              className="gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Home
-            </Button>
           </div>
-        </div>
-      </Card>
+        )}
+      </div>
     </div>
   );
 };
