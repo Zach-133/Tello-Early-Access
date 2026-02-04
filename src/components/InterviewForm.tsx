@@ -118,9 +118,9 @@ export function InterviewForm() {
             <SelectValue placeholder="Select job field" />
           </SelectTrigger>
           <SelectContent className="bg-popover border-border">
-            <SelectItem value="STEM">STEM</SelectItem>
-            <SelectItem value="Business">Business</SelectItem>
-            <SelectItem value="Arts">Arts</SelectItem>
+            <SelectItem value="Engineering">Engineering</SelectItem>
+            <SelectItem value="Nursing">Nursing</SelectItem>
+            <SelectItem value="Architecture">Architecture</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -138,8 +138,8 @@ export function InterviewForm() {
           </SelectTrigger>
           <SelectContent className="bg-popover border-border">
             <SelectItem value="Beginner">Beginner</SelectItem>
-            <SelectItem value="Medium">Medium</SelectItem>
-            <SelectItem value="Hard">Hard</SelectItem>
+            <SelectItem value="Intermediate">Intermediate</SelectItem>
+            <SelectItem value="Advanced">Advanced</SelectItem>
           </SelectContent>
         </Select>
       </div>
