@@ -79,9 +79,9 @@ const Interview = () => {
       await (conversation as any).startSession({
         agentId: 'agent_2601kgh4x4ygfpatf3m2j4aav9yb',
         overrides: {
-          agent: {
-            voiceId: selectedVoiceId
-          } as any
+          tts: {
+            voice_id: selectedVoiceId
+          }
         },
         dynamicVariables: {
           user_name: state.name,
@@ -92,7 +92,7 @@ const Interview = () => {
         }
       });
 
-      console.log('Interview session started successfully');
+      console.log('Interview started with voice:', selectedVoiceId);
     } catch (error: any) {
       console.error('Failed to start interview:', error);
       setIsConnecting(false);
