@@ -60,10 +60,21 @@ const Interview = () => {
       // Request microphone permission
       await navigator.mediaDevices.getUserMedia({ audio: true });
 
+      // Map difficulty to the correct ElevenLabs agent
+      const agentByDifficulty: Record<string, string> = {
+        Beginner: 'agent_5201khb8ye2se6ta1vsxf6f4wsx6',
+        Intermediate: 'agent_0101khb8tr92e3st3vbnjm3z0jwk',
+        Advanced: 'agent_6501khb8vxzmeejsq3mga7tn8kdn',
+      };
+      const agentId = agentByDifficulty[state.difficulty];
+      if (!agentId) {
+        throw new Error(`Unknown difficulty: ${state.difficulty}`);
+      }
+
       // Start conversation with dynamic variables via overrides
       // @ts-expect-error - dynamicVariables is supported by the SDK but types may be outdated
       await conversation.startSession({
-        agentId: 'agent_2601kgh4x4ygfpatf3m2j4aav9yb',
+        agentId,
         dynamicVariables: {
           user_name: state.name,
           job_field: state.jobField,
