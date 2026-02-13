@@ -57,13 +57,31 @@ const Interview = () => {
     setIsConnecting(true);
 
     try {
-      // Request microphone permission
       await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      // Start conversation with dynamic variables via overrides
-      // @ts-expect-error - dynamicVariables is supported by the SDK but types may be outdated
+      // Map difficulty level to corresponding agent ID
+      const agentMapping: Record<string, string> = {
+        'Beginner': 'agent_5201khb8ye2se6ta1vsxf6f4wsx6',
+        'Intermediate': 'agent_0101khb8tr92e3st3vbnjm3z0jwk',
+        'Advanced': 'agent_6501khb8vxzmeejsq3mga7tn8kdn'
+      };
+
+      const selectedAgentId = agentMapping[state.difficulty];
+
+      console.log('Starting interview:', {
+        difficulty: state.difficulty,
+        agentId: selectedAgentId,
+        sessionId: state.sessionId
+      });
+
+      if (!selectedAgentId) {
+        throw new Error(`No agent found for difficulty level: ${state.difficulty}`);
+      }
+
+      // Start conversation with difficulty-specific agent
+      // @ts-expect-error - agentId with dynamicVariables is supported but types may be outdated
       await conversation.startSession({
-        agentId: 'agent_2601kgh4x4ygfpatf3m2j4aav9yb',
+        agentId: selectedAgentId,
         dynamicVariables: {
           user_name: state.name,
           job_field: state.jobField,
@@ -73,19 +91,13 @@ const Interview = () => {
         }
       });
 
-      console.log('Session started with variables:', {
-        user_name: state.name,
-        job_field: state.jobField,
-        difficulty: state.difficulty,
-        duration: state.duration,
-        session_id: state.sessionId
-      });
+      console.log('Interview started successfully with', state.difficulty, 'agent');
     } catch (error: any) {
-      console.error('Failed to start:', error);
+      console.error('Failed to start interview:', error);
       setIsConnecting(false);
 
       if (error.name === 'NotAllowedError') {
-        alert('Microphone access denied. Enable permissions and try again.');
+        alert('Microphone access denied. Please enable microphone permissions and try again.');
       } else {
         alert('Failed to start interview: ' + error.message);
       }
