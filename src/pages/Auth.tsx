@@ -14,6 +14,7 @@ export default function Auth() {
   const [tab, setTab] = useState<Tab>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [name, setName] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [signupSuccess, setSignupSuccess] = useState(false)
@@ -37,7 +38,7 @@ export default function Auth() {
         navigate('/form', { replace: true })
       }
     } else {
-      const { error } = await signUp(email, password)
+      const { error } = await signUp(email, password, name.trim() || undefined)
       if (error) {
         setError(error.message)
         setSubmitting(false)
@@ -148,6 +149,24 @@ export default function Auth() {
                     className="font-sans"
                   />
                 </div>
+
+                {tab === 'signup' && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="name" className="text-sm font-sans text-foreground/80">
+                      Your name
+                    </Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      autoComplete="given-name"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="First name"
+                      className="font-sans"
+                    />
+                  </div>
+                )}
 
                 {error && (
                   <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3">

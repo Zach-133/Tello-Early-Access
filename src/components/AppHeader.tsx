@@ -20,7 +20,8 @@ export default function AppHeader() {
     navigate('/', { replace: true })
   }
 
-  const initial = user?.email?.[0]?.toUpperCase() ?? '?'
+  const name = user?.user_metadata?.full_name as string | undefined
+  const initial = name?.[0]?.toUpperCase() ?? user?.email?.[0]?.toUpperCase() ?? '?'
 
   return (
     <header className="sticky top-0 z-50 w-full h-14 flex items-center justify-between px-6 bg-background/80 backdrop-blur-md border-b border-border/40 shadow-soft">
@@ -49,8 +50,10 @@ export default function AppHeader() {
 
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuLabel className="font-normal">
-            <p className="text-xs text-muted-foreground font-sans mb-0.5">Signed in as</p>
-            <p className="text-sm font-medium font-sans text-foreground truncate">
+            {name && (
+              <p className="text-sm font-medium font-sans text-foreground">{name}</p>
+            )}
+            <p className={`font-sans truncate ${name ? 'text-xs text-muted-foreground mt-0.5' : 'text-sm font-medium text-foreground'}`}>
               {user?.email ?? '—'}
             </p>
           </DropdownMenuLabel>
