@@ -128,6 +128,24 @@ export default function Auth() {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
+                {tab === 'signup' && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="name" className="text-sm font-sans text-foreground/80">
+                      Full name
+                    </Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      autoComplete="name"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="John Doe"
+                      className="font-sans"
+                    />
+                  </div>
+                )}
+
                 <div className="space-y-1.5">
                   <Label htmlFor="email" className="text-sm font-sans text-foreground/80">
                     Email
@@ -160,24 +178,6 @@ export default function Auth() {
                     className="font-sans"
                   />
                 </div>
-
-                {tab === 'signup' && (
-                  <div className="space-y-1.5">
-                    <Label htmlFor="name" className="text-sm font-sans text-foreground/80">
-                      Your name
-                    </Label>
-                    <Input
-                      id="name"
-                      type="text"
-                      autoComplete="given-name"
-                      required
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="First name"
-                      className="font-sans"
-                    />
-                  </div>
-                )}
 
                 {error && (
                   <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3">
