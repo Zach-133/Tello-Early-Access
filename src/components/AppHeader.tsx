@@ -24,10 +24,13 @@ export default function AppHeader() {
 
   return (
     <header className="sticky top-0 z-50 w-full h-14 flex items-center justify-between px-6 bg-background/80 backdrop-blur-md border-b border-border/40 shadow-soft">
-      {/* Brand */}
-      <span className="font-serif text-xl text-primary tracking-tight select-none">
-        <span className="bg-gradient-coral bg-clip-text text-transparent">T</span>ello
-      </span>
+      {/* Brand — matches landing Navbar */}
+      <div className="flex items-center gap-2">
+        <div className="w-8 h-8 rounded-lg bg-gradient-coral flex items-center justify-center shadow-coral">
+          <span className="text-primary-foreground font-serif text-base font-bold">T</span>
+        </div>
+        <span className="font-serif text-xl text-foreground">Tello</span>
+      </div>
 
       {/* User menu */}
       <DropdownMenu>
