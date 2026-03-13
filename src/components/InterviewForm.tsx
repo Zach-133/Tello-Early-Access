@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -11,11 +10,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 const WEBHOOK_URL = "https://n8n.zach13.com/webhook/743697f7-3774-4876-b10d-775cbbb67613";
 
 interface FormData {
-  name: string;
   duration: string;
   jobField: string;
   difficulty: string;
@@ -23,10 +22,10 @@ interface FormData {
 
 export function InterviewForm() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({
-    name: "",
     duration: "",
     jobField: "",
     difficulty: "",
@@ -37,13 +36,16 @@ export function InterviewForm() {
     setError(null);
     setIsLoading(true);
 
+    const name = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+    const email = user?.email || '';
+
     try {
       const response = await fetch(WEBHOOK_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, name, email }),
       });
 
       if (!response.ok) {
@@ -51,7 +53,7 @@ export function InterviewForm() {
       }
 
       const data = await response.json();
-      
+
       navigate("/interview", {
         state: {
           sessionId: data.sessionId,
@@ -68,25 +70,10 @@ export function InterviewForm() {
     }
   };
 
-  const isFormValid = formData.name && formData.duration && formData.jobField && formData.difficulty;
+  const isFormValid = formData.duration && formData.jobField && formData.difficulty;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-2">
-        <Label htmlFor="name" className="text-sm font-medium text-foreground">
-          Your Name
-        </Label>
-        <Input
-          id="name"
-          type="text"
-          placeholder="Enter your name"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          required
-          className="h-12 border-border bg-background px-4 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/20"
-        />
-      </div>
-
       <div className="space-y-2">
         <Label htmlFor="duration" className="text-sm font-medium text-foreground">
           Interview Duration
