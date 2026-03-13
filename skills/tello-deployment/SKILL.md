@@ -69,19 +69,14 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 ## GitHub Repository
 
-**Current status:** This folder (Tello-Early-Access) needs to be set up as a new GitHub repo.
+**Current status:** `tello-early-access` is the active repo (as of 6th March 2026). It is already:
+- Pushed to GitHub on the `main` branch
+- Connected to Cloudflare Pages (auto-deploys on push to `main`)
+- Live at tello.zach13.com
 
-**Plan for new repo:**
-1. Create a new repo on GitHub (recommended: private, named `tello-early-access` or similar)
-2. Set the remote from this folder:
-   ```bash
-   git remote set-url origin https://github.com/YOUR_USERNAME/REPO_NAME.git
-   git push -u origin main
-   ```
-3. In Cloudflare Pages: disconnect the old repo, connect the new repo
-4. Re-configure env vars in Cloudflare Pages (they don't transfer)
+The previous repo (`tello-dev-site`) was backed up and this repo took over. Claude Code works in `c:\Users\Admin\Downloads\Claude Code Files\Tello-Early-Access`.
 
-**Note:** The old GitHub repo should be archived (not deleted) to preserve history.
+**Planned domain migration:** tellointerview.ai (£70/year) — currently tello.zach13.com. Update DNS + Cloudflare custom domain when purchased.
 
 ---
 

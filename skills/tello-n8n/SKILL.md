@@ -11,11 +11,15 @@ Tello's backend runs entirely on n8n (self-hosted at n8n.zach13.com). There are 
 
 ## Workflow 0 — Retrieve Questions
 **Name:** Tello v2 - 0. Retrieve Questions
-**Trigger:** Webhook called by the ElevenLabs agent mid-interview (EL built-in tool call)
+**Trigger:** EL tool call at the **start of conversation** (EL's first action before any interview questions)
 **Inputs:** `difficulty`, `job_field`, `duration`
 **Logic:** Queries the question bank in Google Sheets, selecting the correct number and type of questions (Introductory / Technical / Scenario) based on the inputs.
 **Output:** Returns selected questions back to EL agent to ask the user.
-**Notes:** This happens automatically during the interview — the frontend has no visibility into it. The question structure is: up to 2 Introductory + up to 3 Technical + up to 3 Scenario slots; actual count varies by duration.
+**Latency:** ~2 seconds at start of conversation — acceptable and transparent to user.
+**Notes:** This approach replaced the "Conversation Initiation Client Data Webhook" (doesn't work with n8n — Twilio only) and avoids injecting questions as dynamic variables (security risk). The frontend has no visibility into this call. Question structure: up to 2 Introductory + up to 3 Technical + up to 3 Scenario slots; actual count varies by duration:
+- 5 min: 1 intro + 1 technical + 1 scenario = 3 questions
+- 10 min: 2 intro + 2 technical + 2 scenario = 6 questions
+- 15 min: 2 intro + 3 technical + 3 scenario = 8 questions
 
 ---
 

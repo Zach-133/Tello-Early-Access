@@ -79,8 +79,10 @@ EL triggers two n8n workflows automatically (no frontend involvement):
 
 | Trigger | n8n Workflow | When |
 |---------|-------------|------|
-| Mid-interview tool call | WF0 — Retrieve Questions | EL agent fetches questions from question bank |
+| Tool call at **start** of conversation | WF0 — Retrieve Questions | EL agent's first action — fetches questions before interviewing begins (~2s latency) |
 | Post-interview webhook | WF2 — Process & Grading | After EL session ends, triggers grading |
+
+**WF0 timing detail:** The question retrieval happens via an EL tool call at the very start of the conversation. This approach replaced the "Conversation Initiation Client Data Webhook" (which doesn't work with n8n, only Twilio) and inline dynamic variable injection (security risk). The 2s latency is acceptable and dramatically reduces EL's system prompt complexity and improves reliability.
 
 The `session_id` dynamic variable links EL data to the correct Sheets row.
 
@@ -102,7 +104,7 @@ The `session_id` dynamic variable links EL data to the correct Sheets row.
 
 **Data collection:** Ivy collects verbatim Q&A pairs for WF2 grading. "verbatim" instruction was added to the data collection prompt to prevent response rephrasing.
 
-**Known issues (from test sessions — being fixed):**
+**Known issues (from test sessions):**
 - Agent speaks too slowly → adjusted prompt for speech speed
 - Robotic tone towards the end of interview → prompt adjusted for warmth throughout
 - Q1 always repeated → fixed in KB prompt
@@ -111,6 +113,9 @@ The `session_id` dynamic variable links EL data to the correct Sheets row.
 - Data collection occasionally rephrases user responses instead of capturing verbatim → "verbatim" added
 - Sometimes asks 3 intro questions for a 5-min interview → question count logic refined
 - Agent made up a question when KB instructions were complex → simplified KB prompt
+
+**Open bugs:**
+- Intermediate / Advanced agents may sound too rigid — no distinct personality yet (pending Ivy stability)
 
 **Guardrails in place:**
 - End call if user goes off-topic twice
@@ -131,15 +136,31 @@ The `session_id` dynamic variable links EL data to the correct Sheets row.
 
 The 4 criteria graded by WF2 (each produces score + band + comment):
 
-| Criterion | Key skill | n8n field name |
-|-----------|-----------|---------------|
-| Technical Knowledge | Domain understanding, accuracy | `technicalKnowledge` |
-| Problem Solving | Analytical thinking, approach | `problemSolving` |
-| Communication & Structure | Clarity, coherence, flow | `communicationSkills` |
-| Relevance & Depth | Focus, detail, completeness | `relevance` |
+| Criterion | Weight | Key skill | n8n field name |
+|-----------|--------|-----------|---------------|
+| Technical Knowledge | 30% | Domain understanding, accuracy | `technicalKnowledge` |
+| Problem Solving | 40% | Analytical thinking, approach | `problemSolving` |
+| Communication & Structure | 15% | Clarity, coherence, flow | `communicationSkills` |
+| Relevance & Depth | 15% | Focus, detail, completeness | `relevance` |
 
 **Score bands:** "1" · "2-4" · "5-7" · "8-10"
 **Final score:** Weighted matrix of 4 criteria → 0-100 scale
+
+---
+
+## EL Evaluations (QA)
+
+5 EL evaluation criteria are linked to Sheets (implemented 6th March 2026). These track:
+- Technical issues (agent fails to call tools, ends call abruptly, etc.)
+- User behaviour
+- Agent behaviour
+- Complete interview conducted
+
+Useful for future QA and reliability monitoring. Additional EL-side error workflows are planned (TBC):
+- Agent fails to call `end_call` tool
+- Agent fails to call `retrieve_questions` tool
+- Massive delay during `retrieve_questions` (15-30s)
+- Agent ends call prematurely or without explanation
 
 ---
 
