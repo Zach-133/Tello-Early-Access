@@ -5,7 +5,7 @@ import { InterviewForm } from "@/components/InterviewForm";
 import { Card } from "@/components/ui/card";
 import { Flame, Target, TrendingUp, Trophy, Loader2 } from "lucide-react";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer,
 } from "recharts";
 
@@ -59,10 +59,11 @@ const buildChartData = (sessions: Session[], mode: ChartMode) => {
     "Overall Score": s.finalScore,
     // Bridge point: only on the last actual session so the dashed projection connects from it
     "Your Potential": mode === "overall" && i === sessions.length - 1 ? s.finalScore : null,
-    "Technical": Math.round(s.technicalKnowledge * 10),
-    "Problem-Solving": Math.round(s.problemSolving * 10),
-    "Communication": Math.round(s.communicationSkills * 10),
-    "Relevance": Math.round(s.relevance * 10),
+    // Tiny Y-offsets (≤1 pt on 0-100 scale) so lines stay distinguishable when values are identical
+    "Technical":          Math.round(s.technicalKnowledge * 10),
+    "Problem-Solving":    Math.round(s.problemSolving * 10) + 0.5,
+    "Communication":      Math.round(s.communicationSkills * 10) - 0.5,
+    "Relevance":          Math.round(s.relevance * 10) + 1,
   }));
 
   if (mode === "breakdown") return actual;
@@ -87,6 +88,25 @@ const buildChartData = (sessions: Session[], mode: ChartMode) => {
   }));
 
   return [...actual, ...projected];
+};
+
+// Custom tooltip — filters out _bg halo lines so they never appear in the tooltip
+const TooltipContent = ({ active, payload }: any) => {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]?.payload?.date;
+  const s = payload[0]?.payload?.label;
+  const header = !s ? "Projected" : d ? `Session ${s} · ${d}` : `Session ${s}`;
+  const items = (payload as any[]).filter((p) => !String(p.dataKey).endsWith("_bg"));
+  return (
+    <div style={{ backgroundColor: "hsl(30,20%,99%)", border: "1px solid hsl(30,20%,88%)", borderRadius: "0.75rem", fontSize: "12px", padding: "8px 12px", boxShadow: "0 4px 20px -4px rgba(60,30,10,0.12)" }}>
+      <p style={{ fontWeight: 600, color: "hsl(25,30%,20%)", marginBottom: 4 }}>{header}</p>
+      {items.map((item, i) => (
+        <p key={i} style={{ color: item.stroke, margin: "1px 0" }}>
+          {item.dataKey === "Your Potential" ? "✨ Potential" : item.dataKey}: <strong>{Math.round(item.value)}</strong>
+        </p>
+      ))}
+    </div>
+  );
 };
 
 interface StatCardProps {
@@ -116,6 +136,7 @@ const Index = () => {
   const [status, setStatus] = useState<"loading" | "loaded" | "empty">("loading");
   const [data, setData] = useState<DashboardData | null>(null);
   const [chartMode, setChartMode] = useState<ChartMode>("overall");
+  const [animationDone, setAnimationDone] = useState(false);
 
   const firstName =
     user?.user_metadata?.full_name?.split(" ")[0] ||
@@ -237,27 +258,15 @@ const Index = () => {
                       Your Performance
                     </h2>
                     {chartMode === "overall" ? (
-                      <p className="text-xs text-muted-foreground mt-0.5">Overall score · your projected potential</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Overall score</p>
                     ) : (
-                      <div className="flex items-center gap-3 mt-1">
-                        {[
-                          { label: "Technical", color: "#D4A843" },
-                          { label: "Problem-Solving", color: "#4D9E8E" },
-                          { label: "Communication", color: "#5CAD7A" },
-                          { label: "Relevance", color: "#E08060" },
-                        ].map(({ label, color }) => (
-                          <div key={label} className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
-                            <span className="text-xs text-muted-foreground font-medium">{label}</span>
-                          </div>
-                        ))}
-                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">Score breakdown across all 4 criteria.</p>
                     )}
                   </div>
 
                   <div className="flex items-center gap-1 bg-secondary rounded-xl p-1">
                     <button
-                      onClick={() => setChartMode("overall")}
+                      onClick={() => { setChartMode("overall"); setAnimationDone(false); }}
                       className={`px-3 py-1 rounded-lg text-xs font-medium transition-[background,color] duration-150 ${
                         chartMode === "overall"
                           ? "bg-card text-foreground shadow-soft"
@@ -267,7 +276,7 @@ const Index = () => {
                       Overall
                     </button>
                     <button
-                      onClick={() => setChartMode("breakdown")}
+                      onClick={() => { setChartMode("breakdown"); setAnimationDone(false); }}
                       className={`px-3 py-1 rounded-lg text-xs font-medium transition-[background,color] duration-150 ${
                         chartMode === "breakdown"
                           ? "bg-card text-foreground shadow-soft"
@@ -279,9 +288,25 @@ const Index = () => {
                   </div>
                 </div>
 
-                <div className="flex-1 min-h-0">
+                <div className="flex-1 min-h-0 relative">
+                  {/* Breakdown legend overlay — absolutely positioned inside chart, doesn't affect layout */}
+                  {chartMode === "breakdown" && (
+                    <div className="absolute top-2 left-10 z-10 flex flex-col gap-1.5 bg-card/85 backdrop-blur-sm rounded-xl px-2.5 py-2 border border-border/40 shadow-soft">
+                      {[
+                        { label: "Technical", color: "#D4A843" },
+                        { label: "Problem-Solving", color: "#4D9E8E" },
+                        { label: "Communication", color: "#5CAD7A" },
+                        { label: "Relevance", color: "#E08060" },
+                      ].map(({ label, color }) => (
+                        <div key={label} className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                          <span className="text-xs text-muted-foreground font-medium">{label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={chartData} margin={{ top: 8, right: 12, left: -4, bottom: chartMode === "breakdown" ? 0 : 4 }}>
+                    <LineChart key={chartMode} data={chartData} margin={{ top: 8, right: 12, left: -4, bottom: 4 }}>
                       <CartesianGrid strokeDasharray="4 4" stroke="hsl(30,15%,91%)" vertical={false} />
                       <XAxis
                         dataKey="label"
@@ -299,26 +324,7 @@ const Index = () => {
                         tickLine={false}
                         width={34}
                       />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "hsl(30,20%,99%)",
-                          border: "1px solid hsl(30,20%,88%)",
-                          borderRadius: "0.75rem",
-                          fontSize: "12px",
-                          boxShadow: "0 4px 20px -4px rgba(60,30,10,0.12)",
-                        }}
-                        labelStyle={{ fontWeight: 600, color: "hsl(25,30%,20%)", marginBottom: 2 }}
-                        labelFormatter={(_label, payload) => {
-                          const d = payload?.[0]?.payload?.date;
-                          const s = payload?.[0]?.payload?.label;
-                          if (!s) return "Projected";
-                          return d ? `Session ${s} · ${d}` : `Session ${s}`;
-                        }}
-                        formatter={(value: number, name: string) => [
-                          value,
-                          name === "Your Potential" ? "✨ Potential" : name,
-                        ]}
-                      />
+                      <Tooltip content={<TooltipContent />} />
 
                       {chartMode === "overall" ? (
                         <>
@@ -330,7 +336,9 @@ const Index = () => {
                             dot={{ r: 3.5, fill: "#E08060", strokeWidth: 0 }}
                             activeDot={{ r: 5, strokeWidth: 0 }}
                             connectNulls={false}
-                            isAnimationActive={false}
+                            isAnimationActive={!animationDone}
+                            animationDuration={700}
+                            onAnimationEnd={() => setAnimationDone(true)}
                           />
                           <Line
                             type="monotone"
@@ -342,15 +350,16 @@ const Index = () => {
                             dot={false}
                             activeDot={false}
                             connectNulls={true}
-                            isAnimationActive={false}
+                            isAnimationActive={!animationDone}
+                            animationDuration={700}
                           />
                         </>
                       ) : (
                         <>
-                          <Line type="monotone" dataKey="Technical"       stroke="#D4A843" strokeWidth={2} dot={{ r: 3, strokeWidth: 0 }} activeDot={{ r: 5, strokeWidth: 0 }} connectNulls={false} isAnimationActive={false} />
-                          <Line type="monotone" dataKey="Problem-Solving"  stroke="#4D9E8E" strokeWidth={2} dot={{ r: 3, strokeWidth: 0 }} activeDot={{ r: 5, strokeWidth: 0 }} connectNulls={false} isAnimationActive={false} />
-                          <Line type="monotone" dataKey="Communication"    stroke="#5CAD7A" strokeWidth={2} dot={{ r: 3, strokeWidth: 0 }} activeDot={{ r: 5, strokeWidth: 0 }} connectNulls={false} isAnimationActive={false} />
-                          <Line type="monotone" dataKey="Relevance"        stroke="#E08060" strokeWidth={2} dot={{ r: 3, strokeWidth: 0 }} activeDot={{ r: 5, strokeWidth: 0 }} connectNulls={false} isAnimationActive={false} />
+                          <Line type="monotone" dataKey="Technical"      stroke="#D4A843" strokeWidth={2} dot={{ r: 3.5, fill: "#D4A843", stroke: "hsl(30,20%,99%)", strokeWidth: 1.5 }} activeDot={{ r: 5.5, fill: "#D4A843", stroke: "hsl(30,20%,99%)", strokeWidth: 1.5 }} connectNulls={true} isAnimationActive={!animationDone} animationDuration={700} onAnimationEnd={() => setAnimationDone(true)} />
+                          <Line type="monotone" dataKey="Problem-Solving" stroke="#4D9E8E" strokeWidth={2} dot={{ r: 3.5, fill: "#4D9E8E", stroke: "hsl(30,20%,99%)", strokeWidth: 1.5 }} activeDot={{ r: 5.5, fill: "#4D9E8E", stroke: "hsl(30,20%,99%)", strokeWidth: 1.5 }} connectNulls={true} isAnimationActive={!animationDone} animationDuration={700} />
+                          <Line type="monotone" dataKey="Communication"   stroke="#5CAD7A" strokeWidth={2} dot={{ r: 3.5, fill: "#5CAD7A", stroke: "hsl(30,20%,99%)", strokeWidth: 1.5 }} activeDot={{ r: 5.5, fill: "#5CAD7A", stroke: "hsl(30,20%,99%)", strokeWidth: 1.5 }} connectNulls={true} isAnimationActive={!animationDone} animationDuration={700} />
+                          <Line type="monotone" dataKey="Relevance"       stroke="#E08060" strokeWidth={2} dot={{ r: 3.5, fill: "#E08060", stroke: "hsl(30,20%,99%)", strokeWidth: 1.5 }} activeDot={{ r: 5.5, fill: "#E08060", stroke: "hsl(30,20%,99%)", strokeWidth: 1.5 }} connectNulls={true} isAnimationActive={!animationDone} animationDuration={700} />
                         </>
                       )}
                     </LineChart>
