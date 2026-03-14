@@ -17,9 +17,9 @@
 ### A2. Critical Backups
 - [ ] **Back up Ivy's system prompt** → `skills/tello-elevenlabs/ivy-system-prompt.md`
   - Manual: copy from ElevenLabs console (agent `agent_5201khb8ye2se6ta1vsxf6f4wsx6`)
-- [ ] **Export all 6 n8n workflows as JSON** → `n8n-backups/`
+- [ ] **Export all 7 n8n workflows as JSON** → `n8n-backups/`
   - Manual: n8n.zach13.com → each workflow → ⋮ → Download
-  - Files: `wf0-retrieve-questions.json`, `wf1-form-submission.json`, `wf2-grading.json`, `wf3-retrieve-results.json`, `wf4-track-durations.json`, `wf5-error-handler.json`
+  - Files: `wf0-retrieve-questions.json`, `wf1-form-submission.json`, `wf2-grading.json`, `wf3-retrieve-results.json`, `wf4-track-durations.json`, `wf5-error-handler.json`, `wf8-user-dashboard.json`
   - Commit the folder to git after exporting
 
 ---
@@ -117,10 +117,12 @@
   - Display a clear error message with retry/contact option
 
 ### E6. User Dashboard
-- [ ] Build user dashboard: display session history and score stats per user
-  - Likely requires a new n8n workflow to query the Master Sheets by user email
-  - Display line graph of scores over time (Technical, Problem Solving, Communication, Relevance, Final)
-  - Add daily streak counter
+- [x] Build user dashboard: display session history and score stats per user
+  - n8n WF8 ("Tello v2 - User Dashboard Data") queries Master Sheets by user email
+  - Webhook: `https://n8n.zach13.com/webhook/45445649-f088-48e2-be5e-ac0ee4a57c23`
+  - Displays: streak, sessions done, improvement, best score stat cards
+  - Line chart with Overall + projection (dashed) and Breakdown (4 criteria) tabs
+  - Implemented in `src/pages/Index.tsx`
 
 ---
 
@@ -157,7 +159,7 @@
 | B — Gating | Not started | Blockers: B2+B4 are manual n8n builds |
 | C — Ivy | Not started | Requires manual EL console work |
 | D — Landing redesign | Not started | Branch strategy agreed |
-| E — Frontend tasks | Not started | E4 (security run) + E5 (error page) + E6 (dashboard) added |
+| E — Frontend tasks | In progress | E6 (dashboard) done; E4 (security), E5 (error page) pending |
 | F — Infrastructure | Not started | Blocked on Phase A backups |
 | G — Business | Not started | Pricing research |
 

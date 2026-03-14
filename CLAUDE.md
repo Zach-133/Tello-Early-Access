@@ -8,6 +8,8 @@
   - Technical Milestones: https://www.notion.so/86d6d8fd7f88828b807d0176092cbbbd
   - Technical: Timeline: https://www.notion.so/3096d8fd7f88826da221018f6c4bcbfb
 - **Commit all changes to GitHub** after completing any task. Remote: `https://github.com/Zach-133/Tello-Early-Access.git` (branch: `main`). Push immediately after committing unless instructed otherwise.
+- **For all frontend changes:** serve on `http://localhost:8080` first. Only push to GitHub once the user has reviewed and approved the result on localhost. Do not push frontend changes speculatively.
+- **Use Puppeteer screenshots to self-correct:** after every frontend change, take a screenshot via `node "screenshot.mjs" http://localhost:8080`, read the PNG with the Read tool, inspect it visually, and fix any visible issues before presenting to the user. Repeat until no issues remain.
 
 ---
 
@@ -34,8 +36,9 @@ User Browser
      ├── /auth                Login / Sign up (Supabase)
      │
      └── [Protected]
-          ├── /form            Interview setup form
-          │     └── POST ──► n8n WF1 (session creation) ──► Google Sheets
+          ├── /form            Interview setup form + user dashboard
+          │     ├── POST ──► n8n WF1 (session creation) ──► Google Sheets
+          │     └── POST ──► n8n WF8 (dashboard data) ──► Google Sheets
           │
           ├── /interview       Live ElevenLabs voice session
           │     └── EL SDK ──► Ivy / Int / Adv agent
@@ -91,6 +94,11 @@ Any n8n failure ──► n8n WF5 (Telegram alert to developer)
 - **WF3 results polling:** `https://n8n.zach13.com/webhook/276ad840-3dcb-4e2b-ac0f-30b1cb9f158f`
   - Called by: `src/pages/Results.tsx` every 5s (max 60 polls)
   - Returns: `{ status: 'processing' }` or `{ status: 'completed', finalScore, scores: {...} }`
+- **WF8 user dashboard data:** `https://n8n.zach13.com/webhook/45445649-f088-48e2-be5e-ac0ee4a57c23`
+  - Name in n8n: "Tello v2 - User Dashboard Data"
+  - Called by: `src/pages/Index.tsx` on load (POST `{ email }`)
+  - Returns: `{ sessions: Session[], stats: DashboardStats }` — queries Master Sheets by user email
+  - Powers the performance chart and stat cards (streak, sessions, improvement, best score)
 - See skill: `skills/tello-n8n/SKILL.md`
 
 ### Google Sheets — Primary Data Store
@@ -162,9 +170,9 @@ npm run test     # Vitest
 
 **Screenshots:**
 ```bash
-node "C:\Users\Admin\Downloads\Tello Frontend v4\screenshot.mjs" http://localhost:8080
+node "screenshot.mjs" http://localhost:8080
 ```
-Saved to `C:\Users\Admin\Downloads\Tello Frontend v4\temporary screenshots\`.
+Saved to `temporary screenshots/` in the project root. Read the PNG with the Read tool after each screenshot.
 Read PNG with the Read tool after each screenshot. Do at least 2 comparison rounds.
 
 ---
