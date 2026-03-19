@@ -80,15 +80,27 @@ const Results = () => {
             timeoutRef.current = setTimeout(checkResults, POLL_INTERVAL);
           }
         } else {
-          // Unknown status
-          setError('Unexpected status: ' + data.status);
-          setStatus('error');
+          // Unknown or empty status — WF3 may not have responded yet (blank Grading Status).
+          // Continue polling rather than erroring.
+          setPollCount(prev => prev + 1);
+          if (pollCount >= MAX_POLLS - 1) {
+            setStatus('timeout');
+            setError('Results are taking longer than expected. Please check back later.');
+          } else {
+            timeoutRef.current = setTimeout(checkResults, POLL_INTERVAL);
+          }
         }
 
       } catch (err) {
+        // Network/parse error during polling — continue polling rather than hard-erroring.
         console.error('Polling error:', err);
-        setError('Failed to check results: ' + (err as Error).message);
-        setStatus('error');
+        setPollCount(prev => prev + 1);
+        if (pollCount >= MAX_POLLS - 1) {
+          setError('Failed to load results. Please try again.');
+          setStatus('error');
+        } else {
+          timeoutRef.current = setTimeout(checkResults, POLL_INTERVAL);
+        }
       }
     };
 
