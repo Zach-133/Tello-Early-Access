@@ -60,7 +60,7 @@ const Results = () => {
         // Log for debugging
         console.log('Poll #' + (pollCount + 1), data);
 
-        if (!data.status || data.status === 'User non-response') {
+        if (data.status === 'User non-response') {
           setStatus('no_session');
         } else if (data.status === 'completed') {
           // Results are ready! Mark dashboard cache stale so next /form visit refetches
