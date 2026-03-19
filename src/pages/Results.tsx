@@ -54,12 +54,13 @@ const Results = () => {
           throw new Error('Failed to fetch results');
         }
 
-        const data = await response.json();
+        const text = await response.text();
+        const data = text.trim() ? JSON.parse(text) : {};
 
         // Log for debugging
         console.log('Poll #' + (pollCount + 1), data);
 
-        if (data.status === 'User non-response') {
+        if (!data.status || data.status === 'User non-response') {
           setStatus('no_session');
         } else if (data.status === 'completed') {
           // Results are ready! Mark dashboard cache stale so next /form visit refetches

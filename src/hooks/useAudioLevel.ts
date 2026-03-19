@@ -70,6 +70,11 @@ export function useAudioLevel(
 
     const init = async () => {
       try {
+        // Brief delay so EL's WebRTC session fully stabilises before we open
+        // a second mic stream — prevents rare audio pipeline interruptions.
+        await new Promise(r => setTimeout(r, 2000));
+        if (cancelled) return;
+
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
         if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
 
