@@ -92,26 +92,26 @@ export function useAudioLevel(
           analyser.getByteFrequencyData(dataArrayRef.current!);
           const data = dataArrayRef.current!;
 
-          // Per-bar heights: real amplitude blended with sine-wave baseline so bars
-          // always move even during silence, keeping users visually engaged.
-          const t = performance.now() / 1000;
-          const binsPerBar = Math.floor(bufferLength / barCount);
-          const heights: number[] = [];
-          for (let b = 0; b < barCount; b++) {
-            let sum = 0;
-            const start = b * binsPerBar;
-            for (let k = start; k < start + binsPerBar; k++) sum += data[k];
-            const realAmp = (sum / binsPerBar) / 255;
-            // Gentle sine baseline (0–0.20): each bar phase-shifted for a wave effect
-            const sineBase = ((Math.sin(t * 1.8 + b * 0.8) + 1) / 2) * 0.20;
-            heights.push(Math.max(sineBase, realAmp));
-          }
-          setBarHeights(heights);
-
-          // Overall volume: mean of all bins, scaled so ~0.5 = comfortable speech
+          // Overall voice amplitude (mean of all bins) — drives all bars together
+          // so they respond to whether voice is detected, not individual frequencies.
           let total = 0;
           for (let i = 0; i < bufferLength; i++) total += data[i];
           const rawVolume = total / bufferLength / 255;
+
+          // Per-bar heights: overall voice level + per-bar sine phase for visual variety.
+          // All bars rise/fall together with speech; when silent they oscillate gently.
+          const t = performance.now() / 1000;
+          const heights: number[] = [];
+          for (let b = 0; b < barCount; b++) {
+            // Sine baseline (0–0.20): continuous gentle movement even in silence
+            const sineBase = ((Math.sin(t * 1.8 + b * 0.8) + 1) / 2) * 0.20;
+            // Voice boost: overall amplitude with slight per-bar variation (±20%)
+            const voiceBoost = rawVolume * (0.8 + Math.sin(b * 1.2) * 0.2);
+            heights.push(Math.max(sineBase, voiceBoost));
+          }
+          setBarHeights(heights);
+
+          // Scale rawVolume for the progress bar (0.5 ≈ comfortable speech level)
           const scaledVolume = Math.min(1, rawVolume * 6);
           setVolume(scaledVolume);
 

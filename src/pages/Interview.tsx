@@ -249,27 +249,20 @@ const Interview = () => {
                     ))}
                   </div>
 
-                  {/* Segmented mic level VU meter */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-center gap-1">
-                      {Array.from({ length: 12 }, (_, i) => {
-                        const litCount = Math.round(volume * 12);
-                        const isLit = i < litCount;
-                        return (
-                          <div
-                            key={i}
-                            className={`w-2.5 h-2.5 rounded-sm ${isLit ? 'bg-coral' : 'bg-muted/40'}`}
-                            style={{
-                              opacity: isLit ? 0.4 + (i / 12) * 0.6 : 0.25,
-                              transition: 'opacity 80ms ease-out',
-                            }}
-                          />
-                        );
-                      })}
+                  {/* Mic level progress bar */}
+                  <div className="flex flex-col items-center gap-1.5">
+                    <div className="relative h-1.5 w-48 rounded-full bg-muted/40 overflow-hidden">
+                      <div
+                        className="absolute inset-y-0 left-0 rounded-full bg-primary"
+                        style={{
+                          width: `${volume * 100}%`,
+                          transition: 'width 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                        }}
+                      />
                     </div>
-                    <div className="flex justify-between px-0.5">
-                      <span className="text-xs text-muted-foreground/50">Soft</span>
-                      <span className="text-xs text-muted-foreground/50">Loud</span>
+                    <div className="flex justify-between w-48">
+                      <span className="text-xs font-medium text-foreground/70">Soft</span>
+                      <span className="text-xs font-medium text-foreground/70">Loud</span>
                     </div>
                   </div>
 
