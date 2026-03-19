@@ -118,8 +118,8 @@ export function InterviewForm({
     try {
       let response: Response;
 
-      const cvExists = cvFile != null;
-      const jdExists = (jobDescLink ?? "").trim().length > 0;
+      const cvExists = !!(proOpen && cvFile);
+      const jdExists = !!(proOpen && (jobDescLink ?? "").trim().length > 0);
 
       if (cvExists) {
         const fd = new FormData();
@@ -163,6 +163,10 @@ export function InterviewForm({
           jdExists,
         },
       });
+
+      // Reset PRO state so the next session starts clean
+      setCvFile?.(null);
+      setJobDescLink?.("");
     } catch {
       setError("Unable to start interview. Please try again.");
     } finally {
