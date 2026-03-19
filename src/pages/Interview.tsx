@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, Briefcase, BarChart3, Mic, ArrowLeft } from "lucide-react";
+import { Clock, Briefcase, BarChart3, Mic, MicOff, ArrowLeft } from "lucide-react";
 import { useConversation } from "@elevenlabs/react";
 import AppHeader from "@/components/AppHeader";
+import { useAudioLevel } from "@/hooks/useAudioLevel";
 
 interface InterviewState {
   sessionId: string;
@@ -21,6 +22,7 @@ const Interview = () => {
   const navigate = useNavigate();
   const [isStarted, setIsStarted] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const { barHeights, isTooSoft } = useAudioLevel(isStarted);
 
   const state = location.state as InterviewState | null;
 
@@ -232,15 +234,16 @@ const Interview = () => {
             {isStarted && (
               <div className="text-center space-y-6 w-full max-w-md">
                 <div className="space-y-5">
-                  {/* Audio visualization placeholder */}
-                  <div className="flex items-center justify-center gap-1.5 h-20">
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+                  {/* Live audio visualizer — bars driven by real microphone amplitude */}
+                  <div className="flex items-end justify-center gap-1.5 h-20">
+                    {barHeights.map((height, i) => (
                       <div
                         key={i}
-                        className="w-1.5 bg-coral rounded-full animate-pulse"
+                        className="w-1.5 bg-coral rounded-full"
                         style={{
-                          height: `${Math.random() * 48 + 16}px`,
-                          animationDelay: `${i * 0.12}s`,
+                          height: `${Math.max(4, height * 64)}px`,
+                          opacity: 0.35 + height * 0.65,
+                          transition: 'height 50ms ease-out, opacity 50ms ease-out',
                         }}
                       />
                     ))}
@@ -259,6 +262,24 @@ const Interview = () => {
                     💡 Take your time to think before answering each question
                   </p>
                 </div>
+
+                {isTooSoft && (
+                  <div className="animate-slide-up bg-gold-light/50 border border-gold/30 rounded-xl p-4 text-left">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-gold/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <MicOff className="w-4 h-4 text-gold" />
+                      </div>
+                      <div className="space-y-0.5">
+                        <p className="text-sm font-semibold text-foreground">
+                          We're having trouble hearing you
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Try speaking louder or moving closer to your microphone
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <Button variant="destructive" onClick={handleEndEarly} className="rounded-xl">
                   End Interview Early
