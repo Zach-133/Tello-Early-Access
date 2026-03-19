@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import AppHeader from "@/components/AppHeader";
-import { ArrowLeft, Loader2, AlertCircle, RefreshCw, Brain, Lightbulb, MessageSquare, Target, Trophy, TrendingUp, Award } from "lucide-react";
+import { ArrowLeft, Loader2, AlertCircle, RefreshCw, Brain, Lightbulb, MessageSquare, Target, Trophy, TrendingUp, Award, MicOff } from "lucide-react";
 import ScoreCard from "@/components/ScoreCard";
 import PerformanceOverview from "@/components/PerformanceOverview";
 
@@ -27,7 +27,7 @@ const Results = () => {
   const { sessionId } = useParams();
   const navigate = useNavigate();
   // State management
-  const [status, setStatus] = useState<'initializing' | 'polling' | 'completed' | 'error' | 'timeout'>('initializing');
+  const [status, setStatus] = useState<'initializing' | 'polling' | 'completed' | 'error' | 'timeout' | 'no_session'>('initializing');
   const [pollCount, setPollCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<any>(null);
@@ -59,7 +59,9 @@ const Results = () => {
         // Log for debugging
         console.log('Poll #' + (pollCount + 1), data);
 
-        if (data.status === 'completed') {
+        if (data.status === 'User non-response') {
+          setStatus('no_session');
+        } else if (data.status === 'completed') {
           // Results are ready! Mark dashboard cache stale so next /form visit refetches
           sessionStorage.setItem('tello_dashboard_stale', 'true');
           setResults(data);
@@ -89,7 +91,6 @@ const Results = () => {
       }
     };
 
-    // Start polling when component mounts
     checkResults();
 
     // Cleanup on unmount
@@ -167,6 +168,35 @@ const Results = () => {
               </div>
             </div>
           </Card>
+        )}
+
+        {/* STATUS: No Session */}
+        {status === 'no_session' && (
+          <div className="min-h-[70vh] flex items-center justify-center">
+            <Card className="bg-card rounded-2xl shadow-card border border-border/50 p-12 max-w-lg w-full">
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-muted rounded-full mb-4">
+                  <MicOff className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <h2 className="text-2xl font-bold text-foreground mb-3 font-serif">
+                  Session Not Graded
+                </h2>
+                <p className="text-muted-foreground mb-4 max-w-md mx-auto">
+                  This session could not be graded, as our interviewer was unable to hear or receive a response from you.
+                </p>
+                <p className="text-sm text-muted-foreground mb-8 max-w-md mx-auto">
+                  This may be due to a microphone issue. Please check your audio setup and try again.
+                </p>
+                <Button
+                  variant="coral"
+                  onClick={() => navigate('/form')}
+                  size="lg"
+                >
+                  Start New Interview
+                </Button>
+              </div>
+            </Card>
+          </div>
         )}
 
         {/* STATUS: Completed */}
