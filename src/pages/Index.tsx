@@ -48,7 +48,7 @@ const formatDateLabel = (isoStr: string) => {
 };
 
 const getSubtitle = (stats: DashboardStats | undefined): string => {
-  if (!stats || stats.totalSessions === 0) return "Ready to start your journey?";
+  if (!stats || stats.totalSessions === 0) return "Let's get you prepped for that dream job.";
   if (stats.streakDays >= 3) return `You're on a ${stats.streakDays}-day streak — keep it going!`;
   if (stats.streakDays === 2) return `2 days in a row — you're building momentum.`;
   if (stats.improvement > 5) return `You've improved ${stats.improvement} points since your first session. Impressive.`;
@@ -88,6 +88,22 @@ const buildChartData = (sessions: Session[], mode: ChartMode) => {
   return [...actual, ...projected];
 };
 
+const MOCK_OVERALL_DATA = [
+  { label: "1", "Overall Score": 10 },
+  { label: "2", "Overall Score": 46 },
+  { label: "3", "Overall Score": 35 },
+  { label: "4", "Overall Score": 63 },
+  { label: "5", "Overall Score": 81 },
+];
+
+const MOCK_BREAKDOWN_DATA = [
+  { label: "1", Technical: 8,  "Problem-Solving": 12, Communication: 10, Relevance: 9  },
+  { label: "2", Technical: 50, "Problem-Solving": 42, Communication: 52, Relevance: 44 },
+  { label: "3", Technical: 32, "Problem-Solving": 40, Communication: 28, Relevance: 38 },
+  { label: "4", Technical: 60, "Problem-Solving": 68, Communication: 55, Relevance: 62 },
+  { label: "5", Technical: 78, "Problem-Solving": 84, Communication: 75, Relevance: 82 },
+];
+
 const TooltipContent = ({ active, payload }: any) => {
   if (!active || !payload?.length) return null;
   const d = payload[0]?.payload?.date;
@@ -113,15 +129,16 @@ interface StatCardProps {
   label: string;
   sub?: string;
   pulse?: boolean;
+  muted?: boolean;
 }
 
-const StatCard = ({ icon, bg, value, label, sub, pulse }: StatCardProps) => (
+const StatCard = ({ icon, bg, value, label, sub, pulse, muted }: StatCardProps) => (
   <Card className="bg-card rounded-2xl shadow-card border border-border/50 p-4 hover:shadow-medium hover:-translate-y-0.5 transition-[transform,box-shadow] duration-200 cursor-default">
     <div className="flex flex-col items-center text-center gap-1.5">
       <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center ${pulse ? "animate-pulse-soft" : ""}`}>
         {icon}
       </div>
-      <p className="text-2xl font-bold text-foreground font-serif">{value}</p>
+      <p className={muted ? "text-sm font-medium text-muted-foreground" : "text-2xl font-bold text-foreground font-serif"}>{value}</p>
       <p className="text-xs font-medium text-muted-foreground">{label}</p>
       {sub && <p className="text-xs text-coral font-medium">{sub}</p>}
     </div>
@@ -338,8 +355,143 @@ const Index = () => {
           </div>
         )}
 
-        {/* ── Empty state — single form card, widens when PRO opens ── */}
-        {status === "empty" && (
+        {/* ── New user — full dashboard layout with zeroed stats + mock chart ── */}
+        {status === "empty" && isNewUser && (
+          <div className="space-y-3 animate-fade-in">
+
+            {/* Stat Cards */}
+            <div className="grid grid-cols-4 gap-3">
+              <StatCard icon={<Flame className="w-5 h-5 text-coral" />} bg="bg-coral/10" value="0" label="Day Streak" />
+              <StatCard icon={<Target className="w-5 h-5 text-teal" />} bg="bg-teal/10" value="0" label="Sessions Done" />
+              <StatCard icon={<TrendingUp className="w-5 h-5 text-gold" />} bg="bg-gold/10" value="N/A" label="Improvement" muted />
+              <StatCard icon={<Trophy className="w-5 h-5 text-gold" />} bg="bg-gold/10" value="N/A" label="Best Score" muted />
+            </div>
+
+            {/* Chart + Form */}
+            <div className="flex items-stretch gap-3">
+
+              {/* Mock chart */}
+              <Card
+                className="bg-card rounded-2xl shadow-card border border-border/50 p-5 flex flex-col min-w-0"
+                style={{
+                  flex: proOpen ? "2 2 0" : "3 3 0",
+                  transition: "flex 320ms cubic-bezier(0.33,1,0.68,1)",
+                  minHeight: "380px",
+                }}
+              >
+                <div className="flex items-start justify-between mb-1 flex-shrink-0">
+                  <div>
+                    <h2 className="text-xl font-bold text-foreground font-serif">Your Performance</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {chartMode === "overall" ? "Overall score" : "Score breakdown across all 4 criteria."}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1 bg-secondary rounded-xl p-1">
+                    <button
+                      onClick={() => setChartMode("overall")}
+                      className={`px-3 py-1 rounded-lg text-xs font-medium transition-[background,color] duration-150 ${chartMode === "overall" ? "bg-card text-foreground shadow-soft" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                      Overall
+                    </button>
+                    <button
+                      onClick={() => setChartMode("breakdown")}
+                      className={`px-3 py-1 rounded-lg text-xs font-medium transition-[background,color] duration-150 ${chartMode === "breakdown" ? "bg-card text-foreground shadow-soft" : "text-muted-foreground hover:text-foreground"}`}
+                    >
+                      Breakdown
+                    </button>
+                  </div>
+                </div>
+                <div className="flex-1 min-h-0 relative">
+                  {chartMode === "breakdown" && (
+                    <div className="absolute top-2 left-10 z-10 flex flex-col gap-1.5 bg-card/85 backdrop-blur-sm rounded-xl px-2.5 py-2 border border-border/40 shadow-soft">
+                      {[
+                        { label: "Technical",      color: "#D4A843" },
+                        { label: "Problem-Solving", color: "#4D9E8E" },
+                        { label: "Communication",  color: "#5CAD7A" },
+                        { label: "Relevance",      color: "#E08060" },
+                      ].map(({ label, color }) => (
+                        <div key={label} className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                          <span className="text-xs text-muted-foreground font-medium">{label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      key={chartMode}
+                      data={chartMode === "overall" ? MOCK_OVERALL_DATA : MOCK_BREAKDOWN_DATA}
+                      margin={{ top: 8, right: 12, left: -4, bottom: 4 }}
+                    >
+                      <CartesianGrid strokeDasharray="4 4" stroke="hsl(30,15%,91%)" vertical={false} />
+                      <XAxis
+                        dataKey="label"
+                        tick={{ fontSize: 11, fill: "hsl(25,20%,52%)" }}
+                        axisLine={{ stroke: "hsl(30,15%,87%)" }}
+                        tickLine={false}
+                        dy={5}
+                        tickFormatter={(v) => `S${v}`}
+                      />
+                      <YAxis
+                        domain={[0, 100]}
+                        ticks={[0, 25, 50, 75, 100]}
+                        tick={{ fontSize: 11, fill: "hsl(25,20%,52%)" }}
+                        axisLine={false}
+                        tickLine={false}
+                        width={34}
+                      />
+                      {chartMode === "overall" ? (
+                        <Line
+                          type="monotone" dataKey="Overall Score"
+                          stroke="hsl(25,10%,70%)" strokeWidth={2.5}
+                          dot={{ r: 3.5, fill: "hsl(25,10%,70%)", strokeWidth: 0 }}
+                          activeDot={false} isAnimationActive={false}
+                        />
+                      ) : (
+                        <>
+                          <Line type="monotone" dataKey="Technical"      stroke="#D4A843" strokeWidth={2} strokeOpacity={0.55} dot={{ r: 3.5, fill: "#D4A843", fillOpacity: 0.55, strokeWidth: 0 }} activeDot={false} isAnimationActive={false} />
+                          <Line type="monotone" dataKey="Problem-Solving" stroke="#4D9E8E" strokeWidth={2} strokeOpacity={0.55} dot={{ r: 3.5, fill: "#4D9E8E", fillOpacity: 0.55, strokeWidth: 0 }} activeDot={false} isAnimationActive={false} />
+                          <Line type="monotone" dataKey="Communication"   stroke="#5CAD7A" strokeWidth={2} strokeOpacity={0.55} dot={{ r: 3.5, fill: "#5CAD7A", fillOpacity: 0.55, strokeWidth: 0 }} activeDot={false} isAnimationActive={false} />
+                          <Line type="monotone" dataKey="Relevance"       stroke="#E08060" strokeWidth={2} strokeOpacity={0.55} dot={{ r: 3.5, fill: "#E08060", fillOpacity: 0.55, strokeWidth: 0 }} activeDot={false} isAnimationActive={false} />
+                        </>
+                      )}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+
+              {/* Form */}
+              <div
+                className="min-w-0"
+                style={{
+                  flex: proOpen ? "3 3 0" : "2 2 0",
+                  transition: "flex 320ms cubic-bezier(0.33,1,0.68,1)",
+                }}
+              >
+                <Card className="bg-card rounded-2xl p-6 h-full" style={getCardStyle(proOpen)}>
+                  <FormCardHeader
+                    proOpen={proOpen}
+                    setProOpen={setProOpen}
+                    subtitle="Configure and start your first session."
+                    creditsRemaining={null}
+                  />
+                  <InterviewForm
+                    cvFile={cvFile}
+                    jobDescLink={jobDescLink}
+                    proOpen={proOpen}
+                    setCvFile={setCvFile}
+                    setJobDescLink={setJobDescLink}
+                    creditsRemaining={null}
+                  />
+                </Card>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* ── Empty state (fetch failed) — narrow form card only ── */}
+        {status === "empty" && !isNewUser && (
           <div
             style={{
               width: proOpen ? "580px" : "320px",
@@ -350,8 +502,8 @@ const Index = () => {
               <FormCardHeader
                 proOpen={proOpen}
                 setProOpen={setProOpen}
-                subtitle="Configure and start your first session"
-                creditsRemaining={isNewUser ? null : creditsRemaining}
+                subtitle="Configure and start your first session!"
+                creditsRemaining={creditsRemaining}
               />
               <InterviewForm
                 cvFile={cvFile}
@@ -359,7 +511,7 @@ const Index = () => {
                 proOpen={proOpen}
                 setCvFile={setCvFile}
                 setJobDescLink={setJobDescLink}
-                creditsRemaining={isNewUser ? null : creditsRemaining}
+                creditsRemaining={creditsRemaining}
               />
             </Card>
           </div>

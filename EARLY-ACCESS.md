@@ -136,6 +136,13 @@
 ### E2. Form Onboarding Tips
 - [ ] Add collapsible "Tips for your first interview" section to `src/pages/Index.tsx`
 
+### E2b. New User Dashboard State (`src/pages/Index.tsx`)
+- [ ] Show full dashboard layout for new users (same as returning users) — not a bare form
+  - Stat cards: all present, values show 0 / "—"
+  - Chart: visible but empty (no data lines), with a hint label e.g. "Your progress will appear here"
+  - Welcome heading already done: "Welcome, [name]." vs "Welcome back, [name]."
+  - Goal: early access user signs in for the first time and sees the full product shape, not a stripped form
+
 ### E3. In-App Feedback (Form Page) *(spec changed — form page only)*
 - [x] Add feedback section to form page (`src/pages/Index.tsx`) — done 18 Mar 2026
 - [x] Incentivise user: founding member framing + free access messaging
@@ -176,10 +183,11 @@
 
 **Pending:**
 - [ ] WF2: after interview completes, increment `used` in Supabase `user_credits` by actual call duration (minutes)
+- [ ] `user_credits` table identifiability — currently rows have only `user_id` UUID with no name or email, making it impossible to identify users when viewing the table directly. Add `email` column (or similar) so rows are human-readable for admin use.
   - Read duration from Master Sheet (WF4 writes it) or from EL post-call data
   - PATCH `user_credits` row for the user's UUID
 - [ ] WF1: return 403 `{ error: "insufficient_credits" }` if remaining credits < 5 at session start (server-side guard, complementing client-side check)
-- [ ] Supabase RLS: ensure users can only read/write their own `user_credits` row
+- [x] Supabase RLS: ensure users can only read/write their own `user_credits` row
 
 ---
 
