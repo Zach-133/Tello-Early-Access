@@ -34,6 +34,7 @@ interface DashboardData {
   sessions: Session[];
   stats: DashboardStats;
   credits_remaining?: number;
+  isNewUser?: boolean;
 }
 
 type ChartMode = "overall" | "breakdown";
@@ -250,6 +251,7 @@ const Index = () => {
   const [jobDescLink, setJobDescLink] = useState("");
   const [proOpen, setProOpen] = useState(false);
   const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
+  const [isNewUser, setIsNewUser] = useState(false);
 
   const firstName =
     user?.user_metadata?.full_name?.split(" ")[0] ||
@@ -269,6 +271,7 @@ const Index = () => {
         try {
           const json: DashboardData = JSON.parse(cached);
           if (typeof json.credits_remaining === "number") setCreditsRemaining(json.credits_remaining);
+          if (json.isNewUser) setIsNewUser(true);
           if (!json.sessions || json.sessions.length === 0) {
             setStatus("empty");
           } else {
@@ -290,6 +293,7 @@ const Index = () => {
         if (!res.ok) throw new Error();
         const json: DashboardData = await res.json();
         if (typeof json.credits_remaining === "number") setCreditsRemaining(json.credits_remaining);
+        if (json.isNewUser) setIsNewUser(true);
         sessionStorage.setItem(cacheKey, JSON.stringify(json));
         sessionStorage.removeItem("tello_dashboard_stale");
         if (!json.sessions || json.sessions.length === 0) {
@@ -319,7 +323,7 @@ const Index = () => {
         {/* Welcome */}
         <div className="mb-5">
           <h1 className="text-4xl font-bold text-foreground font-serif leading-tight">
-            Welcome back, {firstName}.
+            {isNewUser ? `Welcome, ${firstName}.` : `Welcome back, ${firstName}.`}
           </h1>
           {status !== "loading" && (
             <p className="text-muted-foreground mt-1">{subtitle}</p>
@@ -347,7 +351,7 @@ const Index = () => {
                 proOpen={proOpen}
                 setProOpen={setProOpen}
                 subtitle="Configure and start your first session"
-                creditsRemaining={creditsRemaining}
+                creditsRemaining={isNewUser ? null : creditsRemaining}
               />
               <InterviewForm
                 cvFile={cvFile}
@@ -355,7 +359,7 @@ const Index = () => {
                 proOpen={proOpen}
                 setCvFile={setCvFile}
                 setJobDescLink={setJobDescLink}
-                creditsRemaining={creditsRemaining}
+                creditsRemaining={isNewUser ? null : creditsRemaining}
               />
             </Card>
           </div>
@@ -520,7 +524,7 @@ const Index = () => {
                     proOpen={proOpen}
                     setProOpen={setProOpen}
                     subtitle="Configure and start your next session"
-                    creditsRemaining={creditsRemaining}
+                    creditsRemaining={isNewUser ? null : creditsRemaining}
                   />
                   <InterviewForm
                     cvFile={cvFile}
@@ -528,7 +532,7 @@ const Index = () => {
                     proOpen={proOpen}
                     setCvFile={setCvFile}
                     setJobDescLink={setJobDescLink}
-                    creditsRemaining={creditsRemaining}
+                    creditsRemaining={isNewUser ? null : creditsRemaining}
                   />
                 </Card>
               </div>
