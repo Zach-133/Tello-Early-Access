@@ -12,14 +12,68 @@ Tello's backend runs entirely on n8n (self-hosted at n8n.zach13.com). There are 
 ## Workflow 0 — Retrieve Questions
 **Name:** Tello v2 - 0. Retrieve Questions
 **Trigger:** EL tool call at the **start of conversation** (EL's first action before any interview questions)
-**Inputs:** `difficulty`, `job_field`, `duration`
-**Logic:** Queries the question bank in Google Sheets, selecting the correct number and type of questions (Introductory / Technical / Scenario) based on the inputs.
-**Output:** Returns selected questions back to EL agent to ask the user.
+**Inputs:** `difficulty`, `job_field`, `duration`, `session_id`, `cv_exists` (string `"true"`/`"false"`), `jd_exists` (string `"true"`/`"false"`)
+**Logic:** Selects the correct number and type of questions (Intro / Technical / Scenario) based on inputs, routing between the default question bank and PRO (CV/JD) question pools.
+**Output:** Returns selected questions back to EL agent.
 **Latency:** ~2 seconds at start of conversation — acceptable and transparent to user.
-**Notes:** This approach replaced the "Conversation Initiation Client Data Webhook" (doesn't work with n8n — Twilio only) and avoids injecting questions as dynamic variables (security risk). The frontend has no visibility into this call. Question structure: up to 2 Introductory + up to 3 Technical + up to 3 Scenario slots; actual count varies by duration:
+
+### WF0 Node Architecture (as of 18 Mar 2026)
+
+```
+Webhook
+  └── Extract Fields (Set)          # Flattens body fields + exposes cv_exists, jd_exists
+        └── Calculate Question Counts  # Determines how many Intro/Tech/Scenario per duration
+              └── Is default flow? (IF)
+                    ├── TRUE (cv_exists='false' AND jd_exists='false')
+                    │     └── Split - Create 3 Processing Branches
+                    │           └── [bank reads] → Grouped Arrays
+                    └── FALSE (CV or JD present)
+                          └── Get Master Row (GSheets)   # Reads CV/JD columns by sessionId
+                                └── Enrich with PRO data (Edit Fields)  # Merges params back in
+                                      └── Split - Create 3 Processing Branches
+                                            └── [bank reads] → Grouped Arrays
+```
+
+**Question counts by duration:**
 - 5 min: 1 intro + 1 technical + 1 scenario = 3 questions
 - 10 min: 2 intro + 2 technical + 2 scenario = 6 questions
 - 15 min: 2 intro + 3 technical + 3 scenario = 8 questions
+
+### 4-Scenario Routing Logic (Grouped Arrays Code node)
+
+WF0 supports 4 scenarios based on `cv_exists` / `jd_exists` flags:
+
+| Scenario | cv_exists | jd_exists | Intro source | Technical source | Scenario source |
+|----------|-----------|-----------|-------------|-----------------|-----------------|
+| 1 — Default | false | false | Bank | Bank | Bank |
+| 2 — CV only | true | false | CV Questions | Bank | Bank |
+| 3 — JD only | false | true | Bank | JD Technical | JD Scenario |
+| 4 — Both | true | true | CV Questions | JD Technical | JD Scenario |
+
+**Fallback rule:** PRO pool is used only if non-empty; otherwise falls back to bank. This handles partially populated Master Sheet rows gracefully.
+
+**Bank reads always run on both IF paths** — this wastes ~300–500ms of GSheets reads for Scenario 4, but keeps the flow simple. Acceptable tradeoff for early access.
+
+### Key n8n Gotchas (WF0)
+
+1. **IF node expression scope:** After "Extract Fields" runs, the webhook body is already flattened. Use `$json.cv_exists` — NOT `$json.body.cv_exists` (body wrapper only exists on raw Webhook node output).
+
+2. **Cross-branch node references:** `$('NodeName').item` throws if that node didn't execute in the current branch. The Grouped Arrays code wraps the PRO data read in a try/catch — the catch means "default flow ran, use bank only".
+
+3. **parseQ helper:** CV/JD questions are stored in Master Sheet as plain text with `\n\n` delimiters between questions. The `parseQ` function splits and trims these into arrays:
+   ```javascript
+   function parseQ(text) {
+     if (!text || text.trim() === '') return [];
+     return text.split('\n\n').map(q => q.trim()).filter(Boolean);
+   }
+   ```
+
+4. **Enrich with PRO data node:** This is a native Edit Fields (Set) node in "Keep All Incoming Fields" mode. It re-injects params from `$('Calculate Question Counts').item.json` into the item (because Get Master Row overwrites context with sheet columns). Fields injected: `sessionId`, `duration`, `jobField`, `difficulty`, `cv_exists`, `jd_exists`, `counts` (Object).
+
+### WF0 Frontend Integration (as of 18 Mar 2026)
+- `src/components/InterviewForm.tsx`: computes `cvExists` and `jdExists` booleans on submit, passes them in navigate state to `/interview`
+- `src/pages/Interview.tsx`: reads `cvExists`/`jdExists` from router state, sends as `cv_exists`/`jd_exists` (string) in EL `dynamicVariables` at session start
+- EL console: WF0 tool definition must include `cv_exists` and `jd_exists` as parameters
 
 ---
 
@@ -27,13 +81,19 @@ Tello's backend runs entirely on n8n (self-hosted at n8n.zach13.com). There are 
 **Name:** Tello v2 - 1. User Form Submission
 **Trigger:** Webhook called by `src/components/InterviewForm.tsx` on form submit
 **Webhook URL:** `https://n8n.zach13.com/webhook/743697f7-3774-4876-b10d-775cbbb67613`
-**Inputs:** `name`, `duration`, `jobField`, `difficulty`
+**Inputs (JSON):** `name`, `email`, `duration`, `jobField`, `difficulty`, `cvExists` (`"True"`/`"False"`), `jdExists` (`"True"`/`"False"`), `jd` (URL string)
+**Inputs (multipart/form-data, when CV attached):** all above + `cv` (binary file)
 **Logic:**
 1. Logs a new row to the Master sheet with user preferences + timestamp
 2. Generates a unique `sessionId` (format: `{prefix}-{uuid-fragment}`, e.g. `zac1-384aa041`)
+3. (Planned) When `cvExists=True`: parse CV binary → generate CV intro questions → write to `CV Questions` column in Master Sheet
+4. (Planned) When `jdExists=True`: scrape/process JD URL → generate JD technical + scenario questions → write to `JD Questions - technical` and `JD Questions - scenario` columns
 **Output:** Returns `{ sessionId, name, duration, jobField, difficulty }` to frontend
-**Frontend flow:** Form data → webhook → receive sessionId → navigate to `/interview` with state
-**Notes:** The n8n Form Submission Execution ID is logged to the Master sheet for debugging.
+**Frontend flow:** Form data → webhook → receive sessionId → navigate to `/interview` with `{ sessionId, name, duration, jobField, difficulty, cvExists, jdExists }` in router state
+**Notes:**
+- The n8n Form Submission Execution ID is logged to the Master sheet for debugging.
+- WF1 is responsible for writing CV/JD questions to Master Sheet **before** the interview starts — WF0 reads them later when EL calls for questions.
+- Frontend sends `cvExists`/`jdExists` as booleans in router state; EL receives them as strings `"true"`/`"false"` via dynamic variables.
 
 ---
 
@@ -59,7 +119,7 @@ Tello's backend runs entirely on n8n (self-hosted at n8n.zach13.com). There are 
 
 ## Workflow 3 — Retrieving Results
 **Name:** Tello v2 - 3. Retrieving Results
-**Trigger:** Webhook polled by `src/pages/Results.tsx` every 5 seconds (max 60 polls = 5 min timeout)
+**Trigger:** Webhook polled by `src/pages/Results.tsx` every 5 seconds (max 24 polls = 2 min timeout)
 **Webhook URL:** `https://n8n.zach13.com/webhook/276ad840-3dcb-4e2b-ac0f-30b1cb9f158f`
 **Inputs:** `{ sessionId }`
 **Logic:** Checks the `Grading Status` flag in the Master sheet for the given sessionId.
@@ -134,4 +194,4 @@ Sent by the frontend to WF1:
 
 ## Known Issues / Active Development
 - Grading minimum: users historically received a minimum of 10 points regardless of performance — being addressed in WF2
-- Grading Status casing inconsistency in Sheets: some rows show "completed", others "Completed" — WF3 should handle both
+- Grading Status is hardcoded as `"Completed"` (capital C) in WF2 — WF3 matches this exactly. No casing inconsistency.

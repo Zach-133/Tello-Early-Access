@@ -10,6 +10,7 @@
 - **Commit all changes to GitHub** after completing any task. Remote: `https://github.com/Zach-133/Tello-Early-Access.git` (branch: `main`). Push immediately after committing unless instructed otherwise.
 - **For all frontend changes:** serve on `http://localhost:8080` first. Only push to GitHub once the user has reviewed and approved the result on localhost. Do not push frontend changes speculatively.
 - **Use Puppeteer screenshots to self-correct:** after every frontend change, take a screenshot via `node "screenshot.mjs" http://localhost:8080`, read the PNG with the Read tool, inspect it visually, and fix any visible issues before presenting to the user. Repeat until no issues remain.
+- **Log lessons learnt** — whenever a genuine gotcha or new insight emerges during the session, proactively ask: *"Want me to log this to Lessons Learnt?"* before writing. Notion page ID: `3286d8fd-7f88-8096-8fad-cc8a35581588`.
 
 ---
 
@@ -92,7 +93,7 @@ Any n8n failure ──► n8n WF5 (Telegram alert to developer)
   - Called by: `src/components/InterviewForm.tsx` on form submit
   - Returns: `{ sessionId, name, duration, jobField, difficulty }`
 - **WF3 results polling:** `https://n8n.zach13.com/webhook/276ad840-3dcb-4e2b-ac0f-30b1cb9f158f`
-  - Called by: `src/pages/Results.tsx` every 5s (max 60 polls)
+  - Called by: `src/pages/Results.tsx` every 5s (max 24 polls = 2 min timeout)
   - Returns: `{ status: 'processing' }` or `{ status: 'completed', finalScore, scores: {...} }`
 - **WF8 user dashboard data:** `https://n8n.zach13.com/webhook/45445649-f088-48e2-be5e-ac0ee4a57c23`
   - Name in n8n: "Tello v2 - User Dashboard Data"
@@ -220,39 +221,49 @@ As of 7th March 2026, Phases 1–3 are complete. The product is live and functio
 - Full interview flow: form → EL voice interview → grading → results
 - Supabase auth connected to form
 - WF0 retrieves questions at **start of conversation** (~2s latency), massively reducing EL prompt complexity
+- WF0 CV/JD 4-scenario routing (all 4 scenarios tested and working)
 - QA workflow (WF4) measuring 3 delay metrics
 - Error workflow (WF5) with Telegram alerts on all 5 workflows
 - 5 EL evaluation criteria linked to Sheets
 - Results page error/timeout state fully implemented
+- User dashboard (WF8) — session history + score stats on form page
+- Feedback section on form page — done 18 Mar 2026
+- PRO features drawer (CV/JD upload) on form page — done 18 Mar 2026
+- Early Access LP live at tello-earlyaccess.zach13.com (email → Supabase, mobile-optimised, legal done)
+- Per-user credit cap: Supabase `user_credits` table + WF8 returns balance + colour-coded UI on form page + button blocked at <5 min — done 20 Mar 2026
 
 ### Outstanding Phase 4 tasks
 **ElevenLabs:**
 - [ ] Manually stress-test Ivy across all durations + job fields; log and fix issues
-- [ ] Add unique personality to Ivy
+- [x] Add unique personality to Ivy
 - [ ] Limit token usage / call duration guardrail (`src/pages/Interview.tsx`)
 - [ ] Back up Ivy's system prompt to `skills/tello-elevenlabs/ivy-system-prompt.md`
 - [x] Fix "waiting for bye" bug — agent now self-terminates
 
 **n8n:**
-- [ ] Export all 6 WFs to `n8n-backups/` (prerequisite for n8n MCP + version update)
+- [ ] Export all 7 WFs to `n8n-backups/` (prerequisite for n8n MCP + version update)
 - [ ] Update n8n to latest version (after backups committed)
-- [ ] Build WF6 — Waitlist submission (email + timestamp → Sheets + Telegram)
+- ~~Build WF6~~ — removed; Supabase is final approach for email collection
 - [ ] Build WF7 — Invite email sender (manual trigger → sends invite link)
 - [ ] Update Intermediate and Advanced agents once Ivy is stable
+- [ ] WF1: backend logic to process CV binary + JD URL → write questions to Master Sheet
 
 **Frontend:**
-- [ ] Security audit — full run via CC (credentials, env vars, webhook URLs, auth flows)
+- [ ] Security audit — full run via CC (credentials, env vars, webhook URLs, auth flows) — target 29–31 Mar
 - [ ] Show error page when interview fails (instead of blank/incorrect grading) (`src/pages/Results.tsx`)
 - [x] Add `.mcp.json` + `.claude/settings.local.json` to `.gitignore` (confirmed never committed)
 - [ ] Auth gating: invite token flow (`src/pages/Auth.tsx`)
-- [ ] WaitlistSection: POST email to WF6 webhook (`src/components/landing/WaitlistSection.tsx`)
+- [ ] WaitlistSection: POST email to Supabase (`src/components/landing/WaitlistSection.tsx`)
 - [ ] Add legal / privacy policy pages (`/privacy`, `/terms`)
-- [ ] Buy domain: **tellointerview.ai** (£70/year) — currently live at tello.zach13.com
-- [ ] Redesign early access landing page — on `redesign/landing` branch
+- [ ] Buy domain: **telloapp.ai** (Cloudflare ~$80/2yr is best) — currently live at tello.zach13.com
+- [ ] Redesign main app landing page — on `redesign/landing` branch
 - [ ] Add onboarding tips on the form page (`/form`)
-- [ ] In-app feedback section on Results page (incentive: free 1-month access)
-- [ ] User dashboard: session history + score stats per user
+- [x] In-app feedback section on form page — done 18 Mar 2026
+- [x] User dashboard: session history + score stats per user — done 13–14 Mar 2026
 - [ ] Pricing research: figure out inbound/outbound costs, break-even calculation
+- [ ] Credit cap: WF2 decrement `used_minutes` in Supabase after each interview completes
+- [ ] Credit cap: WF1 server-side 403 guard if `credits_remaining < 5` at session start
+- [ ] Credit cap: Supabase RLS on `user_credits` table
 
 ### Early Access offer (when launched)
 Free 1-month PRO access for founding members who complete x interviews and provide reviews/feedback.

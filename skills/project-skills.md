@@ -156,7 +156,7 @@ SCREENSHOT_TEST_PASSWORD=
 | Interview form submit | `https://n8n.zach13.com/webhook/743697f7-3774-4876-b10d-775cbbb67613` |
 | Results polling | `https://n8n.zach13.com/webhook/276ad840-3dcb-4e2b-ac0f-30b1cb9f158f` |
 
-- Results page polls every 5s, max 60 polls (5 min timeout)
+- Results page polls every 5s, max 24 polls (2 min timeout)
 - Posts `{ sessionId }`, receives full score object
 
 ## ElevenLabs Agents (by difficulty)

@@ -110,6 +110,7 @@ export function InterviewForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (insufficientCredits) return;
     setError(null);
     setIsLoading(true);
 

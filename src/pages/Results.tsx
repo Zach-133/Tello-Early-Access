@@ -35,7 +35,7 @@ const Results = () => {
 
   // Polling function
   useEffect(() => {
-    const MAX_POLLS = 60; // 5 minutes (60 polls × 5 seconds)
+    const MAX_POLLS = 24; // 2 minutes (24 polls × 5 seconds)
     const POLL_INTERVAL = 5000; // 5 seconds
 
     const checkResults = async () => {
@@ -140,7 +140,7 @@ const Results = () => {
                   Our AI graders are analyzing your responses...
                 </p>
                 <p className="text-sm text-muted-foreground mt-4">
-                  Poll #{pollCount + 1} of 60 • Usually takes 30-60 seconds
+                  Poll #{pollCount + 1} of 24 • Usually takes 30-60 seconds
                 </p>
                 <p className="text-xs text-muted-foreground mt-2 font-mono">
                   Session: {sessionId}
