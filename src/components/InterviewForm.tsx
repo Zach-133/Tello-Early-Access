@@ -29,6 +29,7 @@ interface InterviewFormProps {
   proOpen?: boolean;
   setCvFile?: (f: File | null) => void;
   setJobDescLink?: (v: string) => void;
+  creditsRemaining?: number | null;
 }
 
 const formatSize = (bytes: number) => {
@@ -43,6 +44,7 @@ export function InterviewForm({
   proOpen,
   setCvFile,
   setJobDescLink,
+  creditsRemaining,
 }: InterviewFormProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -186,6 +188,7 @@ export function InterviewForm({
   };
 
   const isFormValid = formData.duration && formData.jobField && formData.difficulty;
+  const insufficientCredits = creditsRemaining !== null && creditsRemaining !== undefined && creditsRemaining < 5;
   const showPro = proVisible && setCvFile && setJobDescLink;
 
   return (
@@ -391,7 +394,7 @@ export function InterviewForm({
       <Button
         type="submit"
         variant="coral"
-        disabled={!isFormValid || isLoading}
+        disabled={!isFormValid || isLoading || insufficientCredits}
         className="h-12 w-full font-semibold disabled:opacity-50"
       >
         {isLoading ? (
@@ -403,6 +406,13 @@ export function InterviewForm({
           "Start Interview"
         )}
       </Button>
+
+      {/* ── Insufficient credits notice ── */}
+      {insufficientCredits && (
+        <p className="text-center text-sm text-destructive mt-2">
+          Insufficient credits.
+        </p>
+      )}
     </form>
   );
 }

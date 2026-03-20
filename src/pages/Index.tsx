@@ -208,7 +208,7 @@ const FormCardHeader = ({ proOpen, setProOpen, subtitle, creditsRemaining }: Car
   const creditColor =
     creditsRemaining === null || creditsRemaining === undefined ? "hsl(160,45%,38%)"
     : creditsRemaining < 5  ? "hsl(0,65%,50%)"
-    : creditsRemaining < 15 ? "hsl(38,85%,42%)"
+    : creditsRemaining < 15 ? "hsl(32,90%,32%)"
     : "hsl(160,45%,38%)";
 
   return (
@@ -355,6 +355,7 @@ const Index = () => {
                 proOpen={proOpen}
                 setCvFile={setCvFile}
                 setJobDescLink={setJobDescLink}
+                creditsRemaining={creditsRemaining}
               />
             </Card>
           </div>
@@ -527,6 +528,7 @@ const Index = () => {
                     proOpen={proOpen}
                     setCvFile={setCvFile}
                     setJobDescLink={setJobDescLink}
+                    creditsRemaining={creditsRemaining}
                   />
                 </Card>
               </div>
