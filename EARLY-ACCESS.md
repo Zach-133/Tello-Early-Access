@@ -20,7 +20,7 @@
   - Future: Use GitHub repo for EL system prompts to enable version tracking (noted in Notion Phase 4)
 - [ ] **Export all 7 n8n workflows as JSON** → `n8n-backups/`
   - Manual: n8n.zach13.com → each workflow → ⋮ → Download
-  - Files: `wf0-retrieve-questions.json`, `wf1-form-submission.json`, `wf2-grading.json`, `wf3-retrieve-results.json`, `wf4-track-durations.json`, `wf5-error-handler.json`, `wf8-user-dashboard.json`
+  - Files: `wf0-tello-retrieve-questions.json`, `wf1-form-submission.json`, `wf2-process-grading.json`, `wf3-polling-results.json`, `wf4-track-execution-duration.json`, `wf5-error-workflow.json`, `wf8-user-dashboard-data.json`, `ea-user-interest-data-collection.json`
   - Commit the folder to git after exporting
 
 ---
@@ -157,7 +157,7 @@
 
 ### E6. User Dashboard
 - [x] Build user dashboard: display session history and score stats per user
-  - n8n WF8 ("Tello v2 - User Dashboard Data") queries Master Sheets by user email
+  - n8n WF8 ("Tello v2 - 8. User Dashboard Data") queries Master Sheets by user email
   - Webhook: `https://n8n.zach13.com/webhook/45445649-f088-48e2-be5e-ac0ee4a57c23`
   - Displays: streak, sessions done, improvement, best score stat cards
   - Line chart with Overall + projection (dashed) and Breakdown (4 criteria) tabs
@@ -192,7 +192,7 @@
 
 ### F2. n8n Version Update
 - [ ] Update n8n (only after F1 confirmed working)
-- [ ] Verify all 6 workflows still function after update
+- [ ] Verify all active workflows still function after update
 
 ### F3. Domain Purchase
 - [ ] Buy `telloapp.ai` (Notion updated name — was `tellointerview.ai`)
